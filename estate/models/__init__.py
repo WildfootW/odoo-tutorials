@@ -6,4 +6,4 @@
 #
 # Distributed under terms of the MIT license.
 
-from . import models
+from . import estate_property

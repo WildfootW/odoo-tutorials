@@ -6,4 +6,8 @@
 #
 # Distributed under terms of the MIT license.
 
-from . import models
+from odoo import fields, models
+
+class EstateProperty(models.Model):
+    _name = "estate.property"
+    _description = "Estate Property"
