@@ -24,8 +24,10 @@
             <form string="Edit Prop">
                 <sheet>
                     <h1><field name="name"/></h1>
+                    <field name="tag_ids" widget="many2many_tags"/>
                     <group>
                         <group>
+                            <field name="property_type_id"/>
                             <field name="postcode"/>
                             <field name="date_availability"/>
                         </group>
@@ -52,6 +54,21 @@
                                 <field name="garden_area"/>
                                 <field name="garden_prientation"/>
                             </group>
+                        </page>
+                        <page string="Other info">
+                            <group>
+                                <field name="buyer_id"/>
+                                <field name="salesperson_id"/>
+                            </group>
+                        </page>
+                        <page string="Offers">
+                            <field name="offer_ids">
+                                <tree>
+                                    <field name="price"/>
+                                    <field name="partner_id"/>
+                                    <field name="status"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

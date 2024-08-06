@@ -10,7 +10,7 @@ from odoo import fields, models
 
 class EstateProperty(models.Model):
     _name = "estate.property"
-    _description = "Estate Property"
+    _description = "Property"
 
     name = fields.Char(required = True)
     active = fields.Boolean()
@@ -33,3 +33,34 @@ class EstateProperty(models.Model):
     garden_prientation = fields.Selection(
         selection = [("North", "North"), ("South", "South"), ("East", "East"), ("West", "West")]
     )
+    property_type_id = fields.Many2one("estate.property.type", string="Property Type")
+    buyer_id = fields.Many2one("res.partner", string = "Buyer", copy = False)
+    salesperson_id = fields.Many2one("res.users", string = "Salesperson", default = lambda self: self.env.user)
+    tag_ids = fields.Many2many("estate.property.tag", string = "Tags")
+    offer_ids = fields.One2many("estate.property.offer", "property_id", string="Offers")
+
+class EstatePropertyType(models.Model):
+    _name = "estate.property.type"
+    _description = "Property Type"
+
+    name = fields.Char(required = True)
+
+    from odoo import models, fields
+
+class EstatePropertyTag(models.Model):
+    _name = "estate.property.tag"
+    _description = "Property Tag"
+
+    name = fields.Char(required = True)
+
+class EstatePropertyOffer(models.Model):
+    _name = "estate.property.offer"
+    _description = "Property Offer"
+
+    price = fields.Float()
+    status = fields.Selection(
+        [('accepted', 'Accepted'), ('refused', 'Refused')],
+        copy=False
+    )
+    partner_id = fields.Many2one("res.partner", string="Partner", required=True)
+    property_id = fields.Many2one("estate.property", string="Property", required=True)
