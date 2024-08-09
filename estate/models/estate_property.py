@@ -6,7 +6,7 @@
 #
 # Distributed under terms of the MIT license.
 
-from odoo import fields, models
+from odoo import fields, models, api
 
 class EstateProperty(models.Model):
     _name = "estate.property"
@@ -24,6 +24,7 @@ class EstateProperty(models.Model):
     date_availability = fields.Date("Available From", copy = False, default = fields.Date.add(fields.Date.today(), months = 3))
     expected_price = fields.Float(required = True)
     selling_price = fields.Float(readonly = True, copy = False)
+    best_price = fields.Float(string="Best Offer", compute="_compute_best_price")
     bedrooms = fields.Integer(default = 2)
     living_area = fields.Integer()
     facades = fields.Integer()
@@ -33,11 +34,35 @@ class EstateProperty(models.Model):
     garden_prientation = fields.Selection(
         selection = [("North", "North"), ("South", "South"), ("East", "East"), ("West", "West")]
     )
+    total_area = fields.Float(compute="_compute_total_area", store=True)
+
     property_type_id = fields.Many2one("estate.property.type", string="Property Type")
     buyer_id = fields.Many2one("res.partner", string = "Buyer", copy = False)
     salesperson_id = fields.Many2one("res.users", string = "Salesperson", default = lambda self: self.env.user)
     tag_ids = fields.Many2many("estate.property.tag", string = "Tags")
     offer_ids = fields.One2many("estate.property.offer", "property_id", string="Offers")
+
+    @api.onchange('garden')
+    def _onchange_garden(self):
+        if self.garden:
+            self.garden_area = 10
+            self.garden_prientation = 'North'
+        else:
+            self.garden_area = 0
+            self.garden_prientation = False
+
+    @api.depends("living_area", "garden_area")
+    def _compute_total_area(self):
+        for record in self:
+            record.total_area = record.living_area + record.garden_area
+
+    @api.depends("offer_ids.price")
+    def _compute_best_price(self):
+        for record in self:
+            if record.offer_ids:
+                record.best_price = max(record.offer_ids.mapped("price"))
+            else:
+                record.best_price = 0.0
 
 class EstatePropertyType(models.Model):
     _name = "estate.property.type"
@@ -64,3 +89,22 @@ class EstatePropertyOffer(models.Model):
     )
     partner_id = fields.Many2one("res.partner", string="Partner", required=True)
     property_id = fields.Many2one("estate.property", string="Property", required=True)
+    validity = fields.Integer(string="Validity (days)", default=7)
+    date_deadline = fields.Date(string="Deadline", compute="_compute_date_deadline", inverse="_inverse_date_deadline", store=True)
+
+    @api.depends("create_date", "validity")
+    def _compute_date_deadline(self):
+        for record in self:
+            start_date = record.create_date.date() if record.create_date else fields.Date.today()
+            record.date_deadline = fields.Date.add(start_date, days=record.validity)
+
+    def _inverse_date_deadline(self):
+        for record in self:
+            if record.create_date and record.date_deadline:
+                # 確保兩者都是日期格式
+                create_date = record.create_date.date()
+                delta = record.date_deadline - create_date
+                record.validity = delta.days
+            else:
+                record.validity = 7
+
