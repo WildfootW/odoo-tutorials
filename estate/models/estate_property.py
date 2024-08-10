@@ -17,7 +17,7 @@ class EstateProperty(models.Model):
     name = fields.Char(required = True)
     active = fields.Boolean()
     state = fields.Selection(
-        selection = [("new", "New"), ("offer received", "Offer Received"), ("offer accepted", "Offer Accepted"), ("sold", "Sold"), ("canceled", "Canceled")],
+        selection = [("new", "New"), ("offer received", "Offer Received"), ("offer accepted", "Offer Accepted"), ("sold", "Sold"), ("cancelled", "Cancelled")],
         default = "new",
         copy = False,
     )
@@ -98,6 +98,7 @@ class EstatePropertyType(models.Model):
     _description = "Property Type"
 
     name = fields.Char(required = True)
+    property_ids = fields.One2many("estate.property", "property_type_id", string="Properties")
 
     _sql_constraints = [
         ('unique_type_name', 'UNIQUE(name)', 'The property type name must be unique.')
