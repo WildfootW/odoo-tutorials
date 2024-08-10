@@ -7,6 +7,7 @@
 # Distributed under terms of the MIT license.
 
 from odoo import fields, models, api
+from odoo.exceptions import UserError
 
 class EstateProperty(models.Model):
     _name = "estate.property"
@@ -15,8 +16,8 @@ class EstateProperty(models.Model):
     name = fields.Char(required = True)
     active = fields.Boolean()
     state = fields.Selection(
-        selection = [("New", "New"), ("Offer Received", "Offer Received"), ("Offer Accepted", "Offer Accepted"), ("Sold", "Sold"), ("Canceled", "Canceled")],
-        default = "New",
+        selection = [("new", "New"), ("offer received", "Offer Received"), ("offer accepted", "Offer Accepted"), ("sold", "Sold"), ("canceled", "Canceled")],
+        default = "new",
         copy = False,
     )
     description = fields.Text()
@@ -32,7 +33,7 @@ class EstateProperty(models.Model):
     garden = fields.Boolean()
     garden_area = fields.Integer()
     garden_prientation = fields.Selection(
-        selection = [("North", "North"), ("South", "South"), ("East", "East"), ("West", "West")]
+        selection = [("north", "North"), ("south", "South"), ("east", "East"), ("west", "West")]
     )
     total_area = fields.Float(compute="_compute_total_area", store=True)
 
@@ -46,7 +47,7 @@ class EstateProperty(models.Model):
     def _onchange_garden(self):
         if self.garden:
             self.garden_area = 10
-            self.garden_prientation = 'North'
+            self.garden_prientation = 'north'
         else:
             self.garden_area = 0
             self.garden_prientation = False
@@ -63,6 +64,20 @@ class EstateProperty(models.Model):
                 record.best_price = max(record.offer_ids.mapped("price"))
             else:
                 record.best_price = 0.0
+
+    def action_cancel(self):
+        for record in self:
+            if record.state == 'sold':
+                raise UserError("Sold properties cannot be cancelled.")
+            record.state = 'cancelled'
+        return True
+
+    def action_set_sold(self):
+        for record in self:
+            if record.state == 'cancelled':
+                raise UserError("Cancelled properties cannot be sold.")
+            record.state = 'sold'
+        return True
 
 class EstatePropertyType(models.Model):
     _name = "estate.property.type"
@@ -101,10 +116,25 @@ class EstatePropertyOffer(models.Model):
     def _inverse_date_deadline(self):
         for record in self:
             if record.create_date and record.date_deadline:
-                # 確保兩者都是日期格式
                 create_date = record.create_date.date()
                 delta = record.date_deadline - create_date
                 record.validity = delta.days
             else:
                 record.validity = 7
 
+    def action_accept(self):
+        for record in self:
+            if record.property_id.state == 'sold':
+                raise UserError("You cannot accept an offer for a sold property.")
+            if any(offer.status == 'accepted' for offer in record.property_id.offer_ids):
+                raise UserError("Only one offer can be accepted for a property.")
+            record.status = 'accepted'
+            record.property_id.state = 'sold'
+            record.property_id.selling_price = record.price
+            record.property_id.buyer_id = record.partner_id
+        return True
+
+    def action_refuse(self):
+        for record in self:
+            record.status = 'refused'
+        return True
