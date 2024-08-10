@@ -43,6 +43,12 @@ class EstateProperty(models.Model):
     tag_ids = fields.Many2many("estate.property.tag", string = "Tags")
     offer_ids = fields.One2many("estate.property.offer", "property_id", string="Offers")
 
+    _sql_constraints = [
+        ('check_expected_price', 'CHECK(expected_price > 0)', 'The expected price must be strictly positive.'),
+        ('check_selling_price', 'CHECK(selling_price >= 0)', 'The selling price must be positive.'),
+        ('unique_property_name', 'UNIQUE(name)', 'The property name must be unique.')
+    ]
+
     @api.onchange('garden')
     def _onchange_garden(self):
         if self.garden:
@@ -85,13 +91,19 @@ class EstatePropertyType(models.Model):
 
     name = fields.Char(required = True)
 
-    from odoo import models, fields
+    _sql_constraints = [
+        ('unique_type_name', 'UNIQUE(name)', 'The property type name must be unique.')
+    ]
 
 class EstatePropertyTag(models.Model):
     _name = "estate.property.tag"
     _description = "Property Tag"
 
     name = fields.Char(required = True)
+
+    _sql_constraints = [
+        ('unique_tag_name', 'UNIQUE(name)', 'The tag name must be unique.')
+    ]
 
 class EstatePropertyOffer(models.Model):
     _name = "estate.property.offer"
@@ -106,6 +118,10 @@ class EstatePropertyOffer(models.Model):
     property_id = fields.Many2one("estate.property", string="Property", required=True)
     validity = fields.Integer(string="Validity (days)", default=7)
     date_deadline = fields.Date(string="Deadline", compute="_compute_date_deadline", inverse="_inverse_date_deadline", store=True)
+
+    _sql_constraints = [
+        ('check_offer_price', 'CHECK(price > 0)', 'The offer price must be strictly positive.')
+    ]
 
     @api.depends("create_date", "validity")
     def _compute_date_deadline(self):
