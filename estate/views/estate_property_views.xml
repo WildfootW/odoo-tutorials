@@ -45,7 +45,6 @@
                     <notebook>
                         <page string="State">
                             <group>
-                                <field name="state" string="Status"/>
                                 <field name="active"/>
                             </group>
                         </page>
