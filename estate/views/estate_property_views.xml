@@ -23,16 +23,16 @@
         <field name="arch" type="xml">
             <form string="Edit Prop">
                 <header>
-                    <button name="action_cancel" type="object" string="Cancel"/>
-                    <button name="action_set_sold" type="object" string="Sold"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('sold', 'cancelled')"/>
+                    <button name="action_set_sold" type="object" string="Sold" invisible="state == 'sold'"/>
                     <field name="state" widget="statusbar" statusbar_visible="new, offer received, offer accepted, sold"/>
                 </header>
                 <sheet>
                     <h1><field name="name"/></h1>
-                    <field name="tag_ids" widget="many2many_tags"/>
+                    <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
                     <group>
                         <group>
-                            <field name="property_type_id"/>
+                            <field name="property_type_id" options="{'no_create': True, 'no_open': True}"/>
                             <field name="postcode"/>
                             <field name="date_availability"/>
                         </group>
@@ -56,8 +56,8 @@
                                 <field name="facades"/>
                                 <field name="garage"/>
                                 <field name="garden"/>
-                                <field name="garden_area"/>
-                                <field name="garden_prientation"/>
+                                <field name="garden_area" invisible="not garden"/>
+                                <field name="garden_prientation" invisible="not garden"/>
                                 <field name="total_area" string="Total Area (sqm)"/>
                             </group>
                         </page>
@@ -68,7 +68,7 @@
                             </group>
                         </page>
                         <page string="Offers">
-                            <field name="offer_ids"/>
+                            <field name="offer_ids" readonly="state in ('offer accepted', 'sold', 'cancelled')"/>
                         </page>
                     </notebook>
                 </sheet>
